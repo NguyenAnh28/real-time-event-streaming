@@ -344,15 +344,60 @@ internal/
   db/
   cache/
   models/
+  generator/
   detection/
     engine.go
     rules.go
     alerts.go
 configs/
-  docker-compose.yml
+  migrations/
   k8s/
+docker-compose.yml
+Dockerfile
+Makefile
 docs/
   plan.md
+```
+
+## Implemented commands
+
+The first backend implementation includes these Go commands:
+
+```text
+cmd/producer   generates synthetic transaction events and writes them to Kafka
+cmd/detector   consumes Kafka events, runs fraud rules, and stores alerts
+cmd/api        exposes health, stats, alerts, user risk, and risk leaderboard
+cmd/benchmark  compares Redis and PostgreSQL risk lookup latency
+```
+
+## Run commands
+
+Start the local stack:
+
+```bash
+docker compose up --build
+```
+
+Generate events:
+
+```bash
+docker compose run --rm producer
+```
+
+Inspect the system:
+
+```bash
+curl http://localhost:8080/health
+curl http://localhost:8080/stats
+curl http://localhost:8080/alerts/recent
+curl http://localhost:8080/users/user_hot_failures/risk
+curl http://localhost:8080/leaderboard/risk
+```
+
+Run the lookup benchmark:
+
+```bash
+docker compose run --rm benchmark
 ```
 
 ## Implementation phases

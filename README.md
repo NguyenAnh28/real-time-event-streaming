@@ -14,6 +14,17 @@ The goal is to build a simple but realistic systems project without a frontend. 
 producer -> Kafka -> detector consumer -> Redis/PostgreSQL -> API
 ```
 
+## What is implemented
+
+- Synthetic transaction event producer
+- Kafka detector consumer
+- Rule-based fraud detection engine
+- Redis counters, sets, recent alerts, and risk leaderboard
+- PostgreSQL raw event, alert, and risk score storage
+- HTTP API for stats, alerts, user risk, and risk leaderboard
+- Docker Compose local stack
+- Kubernetes app manifests
+
 ## Main components
 
 - Go: producer, detector, API, and benchmark tooling
@@ -32,6 +43,55 @@ producer -> Kafka -> detector consumer -> Redis/PostgreSQL -> API
 - Detect too many failed payments from one user
 - Store generated fraud alerts in PostgreSQL
 
+## Run locally
+
+Start Kafka, Redis, PostgreSQL, the detector, and the API:
+
+```bash
+docker compose up --build
+```
+
+In another terminal, generate synthetic events:
+
+```bash
+docker compose run --rm producer
+```
+
+Query the API:
+
+```bash
+curl http://localhost:8080/health
+curl http://localhost:8080/stats
+curl http://localhost:8080/alerts/recent
+curl http://localhost:8080/users/user_hot_failures/risk
+curl http://localhost:8080/leaderboard/risk
+```
+
+Run the Redis vs PostgreSQL lookup benchmark:
+
+```bash
+docker compose run --rm benchmark
+```
+
+Stop the stack:
+
+```bash
+docker compose down -v
+```
+
+## Local Go commands
+
+The normal path is Docker Compose because Redis and PostgreSQL are kept internal to avoid port conflicts. If you want to run the Go commands directly, point `DATABASE_URL` and `REDIS_ADDR` at your own local services.
+
+```bash
+go run ./cmd/producer -rate=1000 -duration=30s
+DATABASE_URL="postgres://fraud:fraud@localhost:5432/fraud?sslmode=disable" REDIS_ADDR="localhost:6379" go run ./cmd/detector
+DATABASE_URL="postgres://fraud:fraud@localhost:5432/fraud?sslmode=disable" REDIS_ADDR="localhost:6379" go run ./cmd/api
+DATABASE_URL="postgres://fraud:fraud@localhost:5432/fraud?sslmode=disable" REDIS_ADDR="localhost:6379" go run ./cmd/benchmark
+```
+
 ## Project plan
 
 See [docs/plan.md](docs/plan.md) for the full implementation plan.
+
+See [docs/implementation.md](docs/implementation.md) for a file-by-file explanation of how the project was implemented.
